@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do List Kehidupan</title>
+
+    <!-- ✅ Tailwind CDN -->
+    <script src="template/tailwind"></script>
+
+    <!-- ✅ Icon (Lucide) -->
+    <script src="template/icon"></script>
+
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+      }
+    </style>
+  </head>
+
+  <body
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-400 to-blue-700 text-white transition-all duration-700 relative"
+  >
+    <audio id="background-audio" autoplay loop>
+      <source src="Scootstreet.mp3" type="audio/mpeg" />
+      Browser Anda tidak mendukung audio.
+    </audio>
+
+    <!-- 🌟 Main App -->
+    <div
+      id="app"
+      class="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-[95%] max-w-md fade-in"
+    >
+      <h1 class="text-2xl font-bold text-center mb-6">
+        Daftar Tugas Saya
+      </h1>
+
+      <!-- Form Tambah -->
+      <form id="task-form" class="space-y-3">
+        <input
+          type="text"
+          id="task-input"
+          placeholder="Masukkan tugas..."
+          required
+          class="w-full p-3 rounded-lg text-gray-800 focus:ring-2 focus:ring-sky-400 outline-none"
+        />
+        <input
+          type="file"
+          id="image-input"
+          accept="image/*"
+          class="w-full p-2 text-sm text-gray-700 bg-white/70 rounded-lg"
+        />
+        <button
+          type="submit"
+          class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-blue-600 hover:to-sky-500 text-white font-semibold py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+        >
+          Tambah Tugas
+        </button>
+      </form>
+
+      <!-- Daftar Tugas -->
+      <ul id="task-list" class="mt-6 space-y-3 max-h-[260px] overflow-y-auto"></ul>
+    </div>
+
+    <!-- 🌙 Footer -->
+    <footer class="absolute bottom-3 text-center text-sm opacity-80">
+      Tetap semangat menjalani hidup
+    </footer>
+
+    <!-- 🪟 Modal Detail -->
+    <div
+      id="detail-modal"
+      class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white text-gray-800 rounded-2xl shadow-2xl p-6 w-80 relative animate-fadeIn"
+      >
+        <button
+          id="close-modal"
+          class="absolute top-3 right-3 text-gray-500 hover:text-red-500"
+        >
+          ✖
+        </button>
+        <h2 class="text-xl font-bold mb-3 text-center">Detail Tugas</h2>
+        <div id="modal-content" class="text-center space-y-3"></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("task-form");
+      const taskList = document.getElementById("task-list");
+      const audio = document.getElementById("background-audio");
+      const modal = document.getElementById("detail-modal");
+      const modalContent = document.getElementById("modal-content");
+      const closeModal = document.getElementById("close-modal");
+
+      // Auto play musik
+      document.addEventListener("click", () => {
+        if (audio.paused) audio.play().catch(() => {});
+      });
+
+      // Tambah tugas
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const taskInput = document.getElementById("task-input");
+        const imageInput = document.getElementById("image-input");
+        const taskText = taskInput.value.trim();
+        const file = imageInput.files[0];
+
+        if (!taskText) return;
+
+        const li = document.createElement("li");
+        li.className =
+          "flex items-center justify-between bg-white/20 rounded-xl p-3 fade-in";
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "flex items-center space-x-3";
+
+        let imageURL = null;
+        if (file) {
+          imageURL = URL.createObjectURL(file);
+          const img = document.createElement("img");
+          img.src = imageURL;
+          img.className = "w-12 h-12 rounded-lg object-cover";
+          contentDiv.appendChild(img);
+        }
+
+        const span = document.createElement("span");
+        span.textContent = taskText;
+        span.className = "font-medium";
+        contentDiv.appendChild(span);
+
+        li.appendChild(contentDiv);
+
+        // Tombol ikon (lihat & hapus)
+        const actionDiv = document.createElement("div");
+        actionDiv.className = "flex items-center gap-2";
+
+        // Tombol lihat
+        const viewBtn = document.createElement("button");
+        viewBtn.innerHTML = `<i data-lucide="eye" class="w-5 h-5"></i>`;
+        viewBtn.className =
+          "p-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white transition";
+        viewBtn.onclick = () => showDetail(taskText, imageURL);
+
+        // Tombol hapus
+        const delBtn = document.createElement("button");
+        delBtn.innerHTML = `<i data-lucide="trash-2" class="w-5 h-5"></i>`;
+        delBtn.className =
+          "p-2 bg-red-500 hover:bg-red-600 rounded-lg text-white transition";
+        delBtn.onclick = () => li.remove();
+
+        actionDiv.appendChild(viewBtn);
+        actionDiv.appendChild(delBtn);
+        li.appendChild(actionDiv);
+
+        taskList.appendChild(li);
+
+        // Reset input
+        taskInput.value = "";
+        imageInput.value = "";
+
+        lucide.createIcons(); // render icon lucide
+      });
+
+      // Fungsi tampilkan detail
+      function showDetail(text, image) {
+        modalContent.innerHTML = `
+          <p class="text-lg font-semibold">${text}</p>
+          ${
+            image
+              ? `<img src="${image}" class="w-full h-48 object-cover rounded-lg border border-gray-300" />`
+              : "<p class='text-sm text-gray-500'>Tidak ada gambar.</p>"
+          }
+        `;
+        modal.classList.remove("hidden");
+      }
+
+      // Tutup modal
+      closeModal.onclick = () => modal.classList.add("hidden");
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.classList.add("hidden");
+      };
+
+      // Dark mode otomatis
+      const hour = new Date().getHours();
+      const body = document.body;
+      if (hour >= 18 || hour < 6) {
+        body.classList.remove("from-sky-400", "to-blue-700");
+        body.classList.add("from-gray-900", "to-gray-700");
+      }
+
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
